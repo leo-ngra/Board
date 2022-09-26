@@ -21,3 +21,8 @@ npm install sass
 
 npm install react-icons
 
+npm install next-auth 
+
+npm install @types/next-auth -D
+
+

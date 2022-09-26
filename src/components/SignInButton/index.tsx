@@ -1,6 +1,7 @@
 import styles from './styles.module.scss'
 import { FaGithub } from 'react-icons/fa'
 import { FiX } from 'react-icons/fi'
+import { signIn } from 'next-auth/client';
 
 export function SignInButton(){
 

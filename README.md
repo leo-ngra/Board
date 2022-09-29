@@ -25,4 +25,6 @@ npm install next-auth
 
 npm install @types/next-auth -D
 
+npm install firebase
+
 

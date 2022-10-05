@@ -1,21 +1,84 @@
+import { useState, FormEvent} from 'react'
+import { GetServerSideProps } from 'next'
+import { getSession } from 'next-auth/react'
 import Head from 'next/head'
+
 import styles from './styles.module.scss'
 import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
 import { SuppotButton } from '../../components/Support'
-import { GetServerSideProps } from 'next'
-import { getSession } from 'next-auth/react'
 
-export default function Board() {
+import  firebase, { db,  app } from '../../services/firebaseConnection'
+
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
+
+
+interface BoardProps {
+    user: {
+        id: string,
+        name: string,
+    }
+}
+
+export default function Board({ user }: BoardProps) {
+
+
+    const [input, setInput] = useState('')
+
+    async function handleAddTask(e: FormEvent){
+        e.preventDefault()
+        
+        if(input === ''){
+            alert('Preencha alguma tarefa!')
+            return
+        }
+
+        await setDoc(doc(db, "tarefas", 'users'), {
+            created: new Date(),
+            tarefa: input,
+            userId: user.id,
+            name: user.name
+          })
+          .then((doc) => {
+            console.log('cadastrado com sucesso')
+        })
+        .catch((err) => {
+            console.log('Erro ao Cadastrar: ', err)
+        })
+
+
+        
+    /*
+       await firebase.firestore().collection('tarefas')
+        .add({
+            created: new Date(),
+            tarefa: input,
+            userId: user.id,
+            name: user.name
+        })
+        .then((doc) => {
+            console.log('cadastrado com sucesso')
+        })
+        .catch((err) => {
+            console.log('Erro ao Cadastrar: ', err)
+        }) */
+
+
+
+    }
+    
+
     return (
         <>
             <Head>
                 <title>Minhas tarefas - Board</title>
             </Head>
             <main className={styles.container}>
-                <form>
+                <form onSubmit={ handleAddTask }>
                     <input
                         type="text"
                         placeholder='Digite a sua tarefa...'
+                        value={input}
+                        onChange={ (e) => setInput(e.target.value) } 
                     />
 
                     <button type='submit'>
@@ -35,7 +98,7 @@ export default function Board() {
                                     <time>26 Setembro 2022</time>
                                 </div>
                                 <button>
-                                    <FiEdit2 size={20} color='#fff'/>
+                                    <FiEdit2 size={20} color='#fff' />
                                     <span>Editar</span>
                                 </button>
                             </div>
@@ -66,9 +129,8 @@ export default function Board() {
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-    const session = await getSession( { req })
-
-    if( !session?.accessToken) {
+    const session = await getSession({ req })
+    if (!session?.user.id) {
         return {
             redirect: {
                 destination: '/',
@@ -77,11 +139,17 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
         }
     }
 
-    console.log(session.user)
+    const user = {
+        name: session?.user.name,
+        id: session?.user.id,
+    }
 
-    return {
+
+
+
+    return{
         props: {
-
+            user
         }
     }
 }

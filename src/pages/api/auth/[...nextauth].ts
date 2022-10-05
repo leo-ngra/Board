@@ -25,16 +25,16 @@ export const authOptions = {
         return false     
       }
     },
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
 
       if (account) {
-        token.accessToken = account.access_token
+        token.id = profile.id
       }
       return token
     },
     async session({ session, token, user }) {
      
-      session.accessToken = token.accessToken
+      session.user.id = token.id
       return session
     }
   }

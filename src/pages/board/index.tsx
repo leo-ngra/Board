@@ -1,4 +1,4 @@
-import { useState, FormEvent} from 'react'
+import { useState, FormEvent } from 'react'
 import { GetServerSideProps } from 'next'
 import { getSession } from 'next-auth/react'
 import Head from 'next/head'
@@ -6,10 +6,11 @@ import Head from 'next/head'
 import styles from './styles.module.scss'
 import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
 import { SuppotButton } from '../../components/Support'
+import { format } from 'date-fns'
 
-import  firebase, { db,  app } from '../../services/firebaseConnection'
-
+import { db } from '../../services/firebaseConnection'
 import { addDoc, collection, doc, setDoc } from "firebase/firestore";
+import Link from 'next/link'
 
 
 interface BoardProps {
@@ -23,49 +24,41 @@ export default function Board({ user }: BoardProps) {
 
 
     const [input, setInput] = useState('')
+    const [taskList, setTaskList] = useState([])
 
-    async function handleAddTask(e: FormEvent){
+    async function handleAddTask(e: FormEvent) {
         e.preventDefault()
-        
-        if(input === ''){
+
+        if (input === '') {
             alert('Preencha alguma tarefa!')
             return
         }
 
-        await setDoc(doc(db, "tarefas", 'users'), {
-            created: new Date(),
-            tarefa: input,
-            userId: user.id,
-            name: user.name
-          })
-          .then((doc) => {
-            console.log('cadastrado com sucesso')
-        })
-        .catch((err) => {
-            console.log('Erro ao Cadastrar: ', err)
-        })
-
-
-        
-    /*
-       await firebase.firestore().collection('tarefas')
-        .add({
+        await addDoc(collection(db, "tarefas"), {
             created: new Date(),
             tarefa: input,
             userId: user.id,
             name: user.name
         })
-        .then((doc) => {
-            console.log('cadastrado com sucesso')
-        })
-        .catch((err) => {
-            console.log('Erro ao Cadastrar: ', err)
-        }) */
+            .then((doc) => {
+                console.log('cadastrado com sucesso')
+                let data = {
+                    id: doc.id,
+                    created: new Date(),
+                    createdFormated: format(new Date(), 'dd MMMM yyyy'),
+                    tarefa: input,
+                    userId: user.id,
+                    name: user.name
+                }
 
-
-
+                setTaskList([...taskList, data])
+                setInput('')
+            })
+            .catch((err) => {
+                console.log('Erro ao Cadastrar: ', err)
+            })
     }
-    
+
 
     return (
         <>
@@ -73,12 +66,12 @@ export default function Board({ user }: BoardProps) {
                 <title>Minhas tarefas - Board</title>
             </Head>
             <main className={styles.container}>
-                <form onSubmit={ handleAddTask }>
+                <form onSubmit={handleAddTask}>
                     <input
                         type="text"
                         placeholder='Digite a sua tarefa...'
                         value={input}
-                        onChange={ (e) => setInput(e.target.value) } 
+                        onChange={(e) => setInput(e.target.value)}
                     />
 
                     <button type='submit'>
@@ -89,26 +82,34 @@ export default function Board({ user }: BoardProps) {
                 <h1>Você tem 2 tarefas!</h1>
 
                 <section>
-                    <article className={styles.taskList}>
-                        <p>Lorem ipsum dolor sit amet consectetur agdsa</p>
-                        <div className={styles.actions}>
-                            <div>
+                    {taskList.map(task => (
+                        <article className={styles.taskList}>
+
+                            <Link href={`/board/${task.id}`}>
+                                <p>{task.tarefa}</p>
+                            </Link>
+
+                            <div className={styles.actions}>
                                 <div>
-                                    <FiCalendar size={20} color='#FFB800' />
-                                    <time>26 Setembro 2022</time>
+                                    <div>
+                                        <FiCalendar size={20} color='#FFB800' />
+                                        <time>{task.createdFormated}</time>
+                                    </div>
+                                    <button>
+                                        <FiEdit2 size={20} color='#fff' />
+                                        <span>Editar</span>
+                                    </button>
                                 </div>
+
                                 <button>
-                                    <FiEdit2 size={20} color='#fff' />
-                                    <span>Editar</span>
+                                    <FiTrash size={20} color='#FF3636' />
+                                    <span>Excluir</span>
                                 </button>
                             </div>
+                        </article>
+                    ))}
 
-                            <button>
-                                <FiTrash size={20} color='#FF3636' />
-                                <span>Excluir</span>
-                            </button>
-                        </div>
-                    </article>
+
                 </section>
             </main>
 
@@ -144,10 +145,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
         id: session?.user.id,
     }
 
-
-
-
-    return{
+    return {
         props: {
             user
         }
